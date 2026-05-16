@@ -4,6 +4,42 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  --background: #f7f8fa;
+  --foreground: #1a1a2e;
+  --card: #ffffff;
+  --card-foreground: #1a1a2e;
+  --popover: #ffffff;
+  --popover-foreground: #1a1a2e;
+  --primary: #0e7490;
+  --primary-foreground: #ffffff;
+  --secondary: #eef0f4;
+  --secondary-foreground: #3a3a50;
+  --muted: #e5e7ed;
+  --muted-foreground: #6b6b80;
+  --accent: #7c3aed;
+  --accent-foreground: #ffffff;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: #d8dce5;
+  --input: #e5e7ed;
+  --ring: #0e7490;
+  --chart-1: #0e7490;
+  --chart-2: #7c3aed;
+  --chart-3: #dc2626;
+  --chart-4: #059669;
+  --chart-5: #d97706;
+  --radius: 0.625rem;
+  --sidebar: #f0f1f5;
+  --sidebar-foreground: #1a1a2e;
+  --sidebar-primary: #0e7490;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e5e7ed;
+  --sidebar-accent-foreground: #3a3a50;
+  --sidebar-border: #d8dce5;
+  --sidebar-ring: #0e7490;
+}
+
+.dark {
   --background: #000000;
   --foreground: #e8e8e8;
   --card: #0a0a0f;
@@ -89,17 +125,17 @@
   }
 }
 
-/* Custom scrollbar for dark theme */
+/* Custom scrollbar — theme-aware */
 ::-webkit-scrollbar {
   width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #07070e;
+  background: var(--sidebar);
 }
 ::-webkit-scrollbar-thumb {
-  background: #1e1e30;
+  background: var(--border);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #2a2a40;
+  background: var(--muted-foreground);
 }

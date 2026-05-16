@@ -11,6 +11,7 @@ import { ChatInputBar } from "@/components/chat-input-bar"
 import { ThinkingTransition } from "@/components/thinking-transition"
 import { pickMockResponse } from "@/lib/mock-data"
 import { SkyQueryLogo } from "@/components/skyquery-logo"
+import { ThemeToggle } from "@/components/theme-toggle"
 import type { MockResponse } from "@/lib/mock-data"
 
 export interface ChatMessage {
@@ -205,6 +206,8 @@ export default function SkyQueryApp() {
                 <span className="hidden text-xs text-muted-foreground/50 sm:inline">
                   via GitHub Copilot
                 </span>
+                {/* Appearance toggle */}
+                <ThemeToggle />
                 {/* User avatar */}
                 <div className="flex h-7 w-7 items-center justify-center rounded-full bg-secondary/60 text-xs font-semibold text-muted-foreground">
                   JD
