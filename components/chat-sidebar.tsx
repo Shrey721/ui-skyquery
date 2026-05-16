@@ -1,6 +1,6 @@
 "use client"
 
-import { motion, AnimatePresence } from "framer-motion"
+import { motion } from "framer-motion"
 import {
   Search,
   X,
@@ -9,64 +9,93 @@ import {
   ChevronDown,
 } from "lucide-react"
 import { useState } from "react"
-
-interface HistoryItem {
-  id: string
-  label: string
-  date: string
-}
+import type { ChatSession } from "@/app/page"
 
 interface ChatSidebarProps {
   isOpen: boolean
   onClose: () => void
-  history: HistoryItem[]
-  activeId?: string
-  onSelect: (item: HistoryItem) => void
+  sessions: ChatSession[]
+  activeSessionId?: string
+  onSelectSession: (sessionId: string) => void
   onNewChat: () => void
 }
 
-function groupByDate(items: HistoryItem[]) {
-  const groups: { label: string; items: HistoryItem[] }[] = []
-  const now = new Date()
-  const todayItems: HistoryItem[] = []
-  const olderItems: HistoryItem[] = []
+function timeAgo(dateStr: string): string {
+  const now = Date.now()
+  const then = new Date(dateStr).getTime()
+  const diffMs = now - then
+  const diffMin = Math.floor(diffMs / 60000)
 
-  items.forEach((item) => {
-    const itemDate = new Date(item.date)
-    const diffDays = Math.floor(
-      (now.getTime() - itemDate.getTime()) / (1000 * 60 * 60 * 24)
-    )
-    if (diffDays === 0) todayItems.push(item)
-    else olderItems.push(item)
+  if (diffMin < 1) return "Just now"
+  if (diffMin < 60) return `${diffMin} min ago`
+  const diffHr = Math.floor(diffMin / 60)
+  if (diffHr < 24) return `${diffHr}h ago`
+  const diffDay = Math.floor(diffHr / 24)
+  return `${diffDay}d ago`
+}
+
+function sessionMeta(session: ChatSession): string {
+  if (session.messages.length === 0) return "New session"
+  const lastMsg = session.messages[session.messages.length - 1]
+  const rowCount = lastMsg.response?.rowCount
+  const rows = rowCount ? `${rowCount.toLocaleString()} rows` : ""
+  const time = timeAgo(session.createdAt)
+  return [time, rows].filter(Boolean).join(" \u00b7 ")
+}
+
+function groupSessions(sessions: ChatSession[]) {
+  const groups: { label: string; sessions: ChatSession[] }[] = []
+  const now = new Date()
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const yesterdayStart = new Date(todayStart.getTime() - 86400000)
+  const weekStart = new Date(todayStart.getTime() - 7 * 86400000)
+
+  const thisSession: ChatSession[] = []
+  const yesterday: ChatSession[] = []
+  const lastWeek: ChatSession[] = []
+  const older: ChatSession[] = []
+
+  sessions.forEach((s) => {
+    const d = new Date(s.createdAt)
+    if (d >= todayStart) thisSession.push(s)
+    else if (d >= yesterdayStart) yesterday.push(s)
+    else if (d >= weekStart) lastWeek.push(s)
+    else older.push(s)
   })
 
-  if (todayItems.length > 0) groups.push({ label: "Today", items: todayItems })
-  if (olderItems.length > 0) groups.push({ label: "Older", items: olderItems })
+  if (thisSession.length > 0)
+    groups.push({ label: "This Session", sessions: thisSession })
+  if (yesterday.length > 0)
+    groups.push({ label: "Yesterday", sessions: yesterday })
+  if (lastWeek.length > 0)
+    groups.push({ label: "Last Week", sessions: lastWeek })
+  if (older.length > 0)
+    groups.push({ label: "Older Chats", sessions: older })
 
   return groups
 }
 
-const MAX_VISIBLE = 10
+const OLDER_THRESHOLD = 20
 
 export function ChatSidebar({
   isOpen,
   onClose,
-  history,
-  activeId,
-  onSelect,
+  sessions,
+  activeSessionId,
+  onSelectSession,
   onNewChat,
 }: ChatSidebarProps) {
   const [searchQuery, setSearchQuery] = useState("")
-  const [showAll, setShowAll] = useState(false)
+  const [olderExpanded, setOlderExpanded] = useState(true)
 
-  // Only show real history (no fake defaults)
-  const filtered = history.filter((item) =>
-    item.label.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  // Filter sessions by search query — match on title
+  const filtered = sessions.filter((s) => {
+    if (!searchQuery) return true
+    return s.title.toLowerCase().includes(searchQuery.toLowerCase())
+  })
 
-  const visibleItems = showAll ? filtered : filtered.slice(0, MAX_VISIBLE)
-  const grouped = groupByDate(visibleItems)
-  const hasMore = filtered.length > MAX_VISIBLE && !showAll
+  const grouped = groupSessions(filtered)
+  const totalSessions = sessions.length
 
   return (
     <motion.aside
@@ -110,53 +139,80 @@ export function ChatSidebar({
         </div>
       </div>
 
-      {/* History */}
+      {/* Sessions */}
       <div className="flex-1 overflow-y-auto px-2 pb-4">
         {grouped.length === 0 ? (
           <p className="px-3 py-6 text-center text-xs text-sidebar-foreground/30">
             No queries yet
           </p>
         ) : (
-          grouped.map((group) => (
-            <div key={group.label} className="mb-3">
-              <p className="px-2 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/35">
-                {group.label}
-              </p>
-              {group.items.map((item) => {
-                const isActive = item.id === activeId
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => onSelect(item)}
-                    className={`group flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-colors ${
-                      isActive
-                        ? "bg-sidebar-accent text-sidebar-foreground"
-                        : "text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground/80"
-                    }`}
-                  >
-                    <span className="truncate">{item.label}</span>
-                    {isActive && (
-                      <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
-                    )}
-                    {!isActive && (
-                      <MoreHorizontal className="h-3.5 w-3.5 shrink-0 opacity-0 transition-opacity group-hover:opacity-40" />
-                    )}
-                  </button>
-                )
-              })}
-            </div>
-          ))
-        )}
+          grouped.map((group) => {
+            const isOlderGroup = group.label === "Older Chats"
+            // Only make "Older Chats" collapsible when total sessions exceed threshold
+            const isCollapsible =
+              isOlderGroup && totalSessions >= OLDER_THRESHOLD
 
-        {/* Show more button */}
-        {hasMore && (
-          <button
-            onClick={() => setShowAll(true)}
-            className="flex w-full items-center justify-center gap-1 rounded-lg px-3 py-2 text-xs text-sidebar-foreground/40 transition-colors hover:bg-sidebar-accent/40 hover:text-sidebar-foreground/60"
-          >
-            <ChevronDown className="h-3 w-3" />
-            Show older ({filtered.length - MAX_VISIBLE} more)
-          </button>
+            return (
+              <div key={group.label} className="mb-3">
+                {/* Group label */}
+                {isCollapsible ? (
+                  <button
+                    onClick={() => setOlderExpanded(!olderExpanded)}
+                    className="flex w-full items-center gap-1 px-2 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/35 transition-colors hover:text-sidebar-foreground/50"
+                  >
+                    <ChevronDown
+                      className={`h-3 w-3 transition-transform ${
+                        olderExpanded ? "" : "-rotate-90"
+                      }`}
+                    />
+                    {group.label}
+                    <span className="ml-1 text-[10px] font-normal normal-case tracking-normal text-sidebar-foreground/25">
+                      ({group.sessions.length})
+                    </span>
+                  </button>
+                ) : (
+                  <p className="px-2 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/35">
+                    {group.label}
+                  </p>
+                )}
+
+                {/* Session items */}
+                {(!isCollapsible || olderExpanded) &&
+                  group.sessions.map((session) => {
+                    const isActive = session.id === activeSessionId
+                    const title =
+                      session.title ||
+                      (session.messages[0]?.query ?? "New chat")
+                    const meta = sessionMeta(session)
+
+                    return (
+                      <button
+                        key={session.id}
+                        onClick={() => onSelectSession(session.id)}
+                        className={`group flex w-full flex-col rounded-lg px-3 py-2 text-left transition-colors ${
+                          isActive
+                            ? "bg-sidebar-accent text-sidebar-foreground"
+                            : "text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground/80"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="truncate text-sm">{title}</span>
+                          {isActive && (
+                            <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                          )}
+                          {!isActive && (
+                            <MoreHorizontal className="h-3.5 w-3.5 shrink-0 opacity-0 transition-opacity group-hover:opacity-40" />
+                          )}
+                        </div>
+                        <span className="mt-0.5 text-[11px] text-sidebar-foreground/30">
+                          {meta}
+                        </span>
+                      </button>
+                    )
+                  })}
+              </div>
+            )
+          })
         )}
       </div>
     </motion.aside>

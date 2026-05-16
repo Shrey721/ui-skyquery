@@ -2,85 +2,147 @@
 
 import { useState, useCallback } from "react"
 import { AnimatePresence, motion } from "framer-motion"
-import { PanelLeft, Sparkles, Database } from "lucide-react"
+import { PanelLeft, Sparkles, Database, User } from "lucide-react"
 import { AnimatedWave } from "@/components/animated-wave"
 import { LandingHero } from "@/components/landing-hero"
 import { ChatSidebar } from "@/components/chat-sidebar"
 import { ChatWorkspace } from "@/components/chat-workspace"
 import { ChatInputBar } from "@/components/chat-input-bar"
 import { ThinkingTransition } from "@/components/thinking-transition"
+import { pickMockResponse } from "@/lib/mock-data"
+import type { MockResponse } from "@/lib/mock-data"
 
-interface HistoryItem {
+export interface ChatMessage {
   id: string
-  label: string
-  date: string
+  query: string
+  response: MockResponse | null
+  timestamp: string
+  isLoading: boolean
+}
+
+export interface ChatSession {
+  id: string
+  title: string
+  messages: ChatMessage[]
+  createdAt: string
 }
 
 type AppPhase = "landing" | "thinking" | "workspace"
 
 export default function SkyQueryApp() {
   const [phase, setPhase] = useState<AppPhase>("landing")
-  const [submittedQuery, setSubmittedQuery] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [history, setHistory] = useState<HistoryItem[]>([])
-  const [activeHistoryId, setActiveHistoryId] = useState<string | null>(null)
+  const [sessions, setSessions] = useState<ChatSession[]>([])
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null)
   const [isTyping, setIsTyping] = useState(false)
+  const [pendingQuery, setPendingQuery] = useState<string | null>(null)
+
+  const currentSession = sessions.find((s) => s.id === currentSessionId) || null
+
+  const addMessageToSession = useCallback(
+    (sessionId: string, query: string) => {
+      const messageId = `msg-${Date.now()}`
+      const newMessage: ChatMessage = {
+        id: messageId,
+        query,
+        response: null,
+        timestamp: new Date().toISOString(),
+        isLoading: true,
+      }
+
+      setSessions((prev) =>
+        prev.map((s) =>
+          s.id === sessionId
+            ? { ...s, messages: [...s.messages, newMessage] }
+            : s
+        )
+      )
+
+      // Simulate loading then resolve with mock data
+      setTimeout(() => {
+        const mockResponse = pickMockResponse(query)
+        setSessions((prev) =>
+          prev.map((s) =>
+            s.id === sessionId
+              ? {
+                  ...s,
+                  messages: s.messages.map((m) =>
+                    m.id === messageId
+                      ? { ...m, response: mockResponse, isLoading: false }
+                      : m
+                  ),
+                }
+              : s
+          )
+        )
+      }, 1200)
+    },
+    []
+  )
 
   const handleQuerySubmit = useCallback(
     (query: string) => {
-      const newId = Date.now().toString()
-      setSubmittedQuery(query)
-      setActiveHistoryId(newId)
       setIsTyping(false)
 
-      // Add to history
-      setHistory((prev) => [
-        { id: newId, label: query, date: new Date().toISOString() },
-        ...prev,
-      ])
-
       if (phase === "landing") {
-        // Show thinking transition first
+        // First query: create session, show thinking, then workspace
+        const sessionId = `session-${Date.now()}`
+        const newSession: ChatSession = {
+          id: sessionId,
+          title: query,
+          messages: [],
+          createdAt: new Date().toISOString(),
+        }
+        setSessions((prev) => [newSession, ...prev])
+        setCurrentSessionId(sessionId)
+        setPendingQuery(query)
         setPhase("thinking")
-      } else {
-        // Already in workspace, just reload results
-        setIsLoading(true)
-        setTimeout(() => {
-          setIsLoading(false)
-        }, 800)
+      } else if (phase === "workspace" && currentSessionId) {
+        // Follow-up: append message to current session
+        addMessageToSession(currentSessionId, query)
       }
     },
-    [phase]
+    [phase, currentSessionId, addMessageToSession]
   )
 
   const handleThinkingComplete = useCallback(() => {
     setPhase("workspace")
     setSidebarOpen(true)
-    setIsLoading(true)
-    setTimeout(() => {
-      setIsLoading(false)
-    }, 600)
-  }, [])
 
-  const handleHistorySelect = useCallback(
-    (item: HistoryItem) => {
-      setSubmittedQuery(item.label)
-      setActiveHistoryId(item.id)
-      setIsLoading(true)
-      setTimeout(() => {
-        setIsLoading(false)
-      }, 800)
+    // Now add the first message to the session
+    if (currentSessionId && pendingQuery) {
+      addMessageToSession(currentSessionId, pendingQuery)
+      setPendingQuery(null)
+    }
+  }, [currentSessionId, pendingQuery, addMessageToSession])
+
+  const handleSessionSelect = useCallback(
+    (sessionId: string) => {
+      setCurrentSessionId(sessionId)
     },
     []
   )
 
   const handleNewChat = useCallback(() => {
-    setPhase("landing")
-    setSidebarOpen(false)
-    setSubmittedQuery("")
-    setActiveHistoryId(null)
+    const sessionId = `session-${Date.now()}`
+    const newSession: ChatSession = {
+      id: sessionId,
+      title: "",
+      messages: [],
+      createdAt: new Date().toISOString(),
+    }
+    setSessions((prev) => [newSession, ...prev])
+    setCurrentSessionId(sessionId)
   }, [])
+
+  const handleFollowUp = useCallback(
+    (text: string) => {
+      if (currentSessionId) {
+        addMessageToSession(currentSessionId, text)
+      }
+    },
+    [currentSessionId, addMessageToSession]
+  )
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-background">
@@ -132,13 +194,19 @@ export default function SkyQueryApp() {
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                {/* Context awareness badge */}
+                {/* Connection badge */}
                 <div className="flex items-center gap-1.5 rounded-full bg-secondary/40 px-3 py-1 text-[11px] text-muted-foreground/70">
-                  <Database className="h-3 w-3 text-primary/50" />
-                  <span>Connected to Starburst</span>
-                  <span className="text-muted-foreground/30">|</span>
-                  <span>Schema indexed</span>
-                  <span className="text-primary/60">148 tables</span>
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#10b981] opacity-75" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-[#10b981]" />
+                  </span>
+                  <span className="hidden sm:inline">prod-starburst.corp</span>
+                  <span className="text-muted-foreground/30 hidden sm:inline">&#183;</span>
+                  <span className="hidden sm:inline">jdbc:trino://...</span>
+                </div>
+                {/* User avatar */}
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-secondary/60 text-muted-foreground">
+                  <User className="h-3.5 w-3.5" />
                 </div>
               </div>
             </motion.header>
@@ -147,9 +215,9 @@ export default function SkyQueryApp() {
             <ChatSidebar
               isOpen={sidebarOpen}
               onClose={() => setSidebarOpen(false)}
-              history={history}
-              activeId={activeHistoryId || undefined}
-              onSelect={handleHistorySelect}
+              sessions={sessions}
+              activeSessionId={currentSessionId || undefined}
+              onSelectSession={handleSessionSelect}
               onNewChat={handleNewChat}
             />
 
@@ -160,8 +228,8 @@ export default function SkyQueryApp() {
             >
               <div className="flex-1 overflow-y-auto">
                 <ChatWorkspace
-                  query={submittedQuery}
-                  isLoading={isLoading}
+                  messages={currentSession?.messages || []}
+                  onFollowUp={handleFollowUp}
                 />
               </div>
               <ChatInputBar onSubmit={handleQuerySubmit} />

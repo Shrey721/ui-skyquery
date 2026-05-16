@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Send } from "lucide-react"
+import { Send, ChevronDown } from "lucide-react"
 import { useState } from "react"
 
 interface ChatInputBarProps {
@@ -46,13 +46,14 @@ export function ChatInputBar({ onSubmit }: ChatInputBarProps) {
             />
           )}
           <div className="relative flex w-full items-center rounded-xl border border-border/40 bg-secondary/50 backdrop-blur-sm transition-colors focus-within:border-primary/20">
+            <ChevronDown className="ml-3 h-3.5 w-3.5 shrink-0 text-muted-foreground/40" />
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
-              placeholder="Ask a follow-up question..."
+              placeholder="Ask anything about your aviation data..."
               className="flex-1 bg-transparent px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none"
               aria-label="Follow-up query"
             />
