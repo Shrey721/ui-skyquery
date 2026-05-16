@@ -153,7 +153,13 @@ export function LandingHero({ onSubmit, onTypingChange }: LandingHeroProps) {
         >
           Sky
         </span>
-        <span className="text-foreground">Query </span>
+        <span
+          className="bg-clip-text text-transparent"
+          style={{
+            backgroundImage: `linear-gradient(${gradientAngle}deg, #94a3b8 0%, #a8b8d0 30%, #b4bcd8 55%, #c4b5d6 100%)`,
+            transition: "background-image 0.3s ease",
+          }}
+        >Query </span>
         <span
           className="bg-clip-text text-transparent"
           style={{
