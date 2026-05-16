@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react"
 import { AnimatePresence, motion } from "framer-motion"
-import { PanelLeft, Sparkles, Database, User } from "lucide-react"
+import { PanelLeft } from "lucide-react"
 import { AnimatedWave } from "@/components/animated-wave"
 import { LandingHero } from "@/components/landing-hero"
 import { ChatSidebar } from "@/components/chat-sidebar"
@@ -10,6 +10,7 @@ import { ChatWorkspace } from "@/components/chat-workspace"
 import { ChatInputBar } from "@/components/chat-input-bar"
 import { ThinkingTransition } from "@/components/thinking-transition"
 import { pickMockResponse } from "@/lib/mock-data"
+import { SkyQueryLogo } from "@/components/skyquery-logo"
 import type { MockResponse } from "@/lib/mock-data"
 
 export interface ChatMessage {
@@ -171,9 +172,10 @@ export default function SkyQueryApp() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.4 }}
           >
-            {/* Top bar */}
+            {/* Top bar — shifts right when sidebar opens */}
             <motion.header
-              className="flex items-center justify-between border-b border-border/40 bg-background/80 px-4 py-3 backdrop-blur-xl"
+              className="flex items-center justify-between border-b border-border/40 bg-background/80 px-4 py-3 backdrop-blur-xl transition-all duration-300"
+              style={{ marginLeft: sidebarOpen ? "288px" : "0" }}
               initial={{ y: -40, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.35, delay: 0.05 }}
@@ -186,14 +188,7 @@ export default function SkyQueryApp() {
                 >
                   <PanelLeft className="h-5 w-5" />
                 </button>
-                <div className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-primary" />
-                  <h1 className="text-sm font-medium text-foreground">
-                    <span className="text-primary">Sky</span>Query Enterprise
-                  </h1>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
+                <SkyQueryLogo size="sm" />
                 {/* Connection badge */}
                 <div className="flex items-center gap-1.5 rounded-full bg-secondary/40 px-3 py-1 text-[11px] text-muted-foreground/70">
                   <span className="relative flex h-2 w-2">
@@ -204,9 +199,15 @@ export default function SkyQueryApp() {
                   <span className="text-muted-foreground/30 hidden sm:inline">&#183;</span>
                   <span className="hidden sm:inline">jdbc:trino://...</span>
                 </div>
+              </div>
+              <div className="flex items-center gap-3">
+                {/* Via GitHub Copilot label */}
+                <span className="hidden text-xs text-muted-foreground/50 sm:inline">
+                  via GitHub Copilot
+                </span>
                 {/* User avatar */}
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-secondary/60 text-muted-foreground">
-                  <User className="h-3.5 w-3.5" />
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-secondary/60 text-xs font-semibold text-muted-foreground">
+                  JD
                 </div>
               </div>
             </motion.header>

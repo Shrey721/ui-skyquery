@@ -10,6 +10,7 @@ import {
 } from "lucide-react"
 import { useState } from "react"
 import type { ChatSession } from "@/app/page"
+import { SkyQueryLogo } from "@/components/skyquery-logo"
 
 interface ChatSidebarProps {
   isOpen: boolean
@@ -105,23 +106,25 @@ export function ChatSidebar({
       className="fixed left-0 top-0 z-30 flex h-screen w-72 flex-col border-r border-border bg-sidebar/95 backdrop-blur-xl"
       aria-label="Chat history sidebar"
     >
-      {/* Header */}
+      {/* Header with logo */}
       <div className="flex items-center justify-between border-b border-sidebar-border px-4 py-3">
-        <button
-          onClick={onNewChat}
-          className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
-          aria-label="New query"
-        >
-          <PenSquare className="h-3.5 w-3.5" />
-          New Query
-        </button>
-        <button
-          onClick={onClose}
-          className="rounded-md p-1.5 text-sidebar-foreground/50 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
-          aria-label="Close sidebar"
-        >
-          <X className="h-4 w-4" />
-        </button>
+        <SkyQueryLogo size="sm" />
+        <div className="flex items-center gap-1">
+          <button
+            onClick={onNewChat}
+            className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            aria-label="New query"
+          >
+            <PenSquare className="h-3.5 w-3.5" />
+          </button>
+          <button
+            onClick={onClose}
+            className="rounded-md p-1.5 text-sidebar-foreground/50 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            aria-label="Close sidebar"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
       {/* Search */}

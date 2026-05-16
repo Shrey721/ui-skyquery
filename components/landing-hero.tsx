@@ -10,9 +10,9 @@ interface LandingHeroProps {
 }
 
 const allSuggestions = [
-  ["Show me top revenue by region", "What were last quarter sales?", "Compare YoY growth rates"],
-  ["Which customers churned last month?", "Break down costs by department", "Inventory levels by warehouse"],
-  ["Marketing ROI by channel", "Show supplier performance", "Predict next quarter revenue"],
+  ["Show Delta delays at ATL yesterday", "Tables related to airports?", "Worst weather impact by carrier"],
+  ["On-time % by route last 7 days", "Show me tail numbers with 3+ delays", "Fleet utilization heatmap"],
+  ["Weather correlation with delays", "ORD vs MDW operational comparison", "Revenue by carrier this quarter"],
 ]
 
 export function LandingHero({ onSubmit, onTypingChange }: LandingHeroProps) {
